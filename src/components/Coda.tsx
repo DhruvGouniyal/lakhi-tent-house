@@ -2,6 +2,11 @@
 
 import ImageReveal from "./animations/ImageReveal";
 import Menu from "./Menu";
+import Manifesto from "./sections/Manifesto";
+import Services from "./sections/Services";
+import Numbers from "./sections/Numbers";
+import Kitchens from "./sections/Kitchens";
+import Process from "./sections/Process";
 import { BUSINESS } from "@/lib/menu";
 
 /**
@@ -13,7 +18,15 @@ import { BUSINESS } from "@/lib/menu";
 export default function Coda() {
   return (
     <div className="relative z-10" style={{ background: "var(--ink)", color: "var(--ivory)" }}>
+      {/* The film hands over to prose, then to substance. Order matters: the
+          manifesto catches the mood the finale leaves you in, and the menu sits
+          after the framing rather than immediately after the credits. */}
+      <Manifesto />
+      <Services />
+      <Numbers />
+      <Kitchens />
       <Menu />
+      <Process />
 
       {/* ---- about ---- */}
       <section

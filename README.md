@@ -154,6 +154,33 @@ camera movement. The original ±7% scale moves compounded with the footage and
 read as drift, so scenes now move 2–3% and filmed transitions use `camera:
 "hold"` and don't move at all.
 
+## Home-page sections
+
+Below the film, each section carries its own scroll behaviour rather than the
+same fade-up repeated:
+
+| Section | Behaviour |
+|---|---|
+| `Manifesto` | Words brighten one at a time, scrubbed. Held sticky over a 220vh wrapper so the fill has room — tied to its own height it finished in a few hundred pixels and read as a flash. |
+| `Services` | Cards uncovered by a clip-path wipe, with alternating parallax drift for depth. |
+| `Numbers` | Counters driven by scroll position, with a rule that draws underneath across the same span. |
+| `Kitchens` | The veg / non-veg halves wipe in from opposite outer edges and meet in the middle. |
+| `Process` | Sticky heading beside a stepped list; a gold rail draws itself down and each dot fills as the rail reaches it. |
+
+Everything animates opacity, transform or clip-path only — no per-frame canvas
+and no filters on large elements, which is what kept the film smooth.
+
+### On the content
+
+Figures are computed from the menu data, never typed in, so they cannot drift:
+9 courses, 305 dishes, 32 live counters, 4 occasion types. The booking steps are
+taken from the brochure's own Deal & Order Confirmation sheet (page 11) — every
+field named is on that form.
+
+Nothing here asserts anything the brochure does not support. There are no
+testimonials, no years-in-business, no event counts and no awards, because no
+source material backs them. If you want those, supply the real numbers.
+
 ## The menu
 
 All nine categories and 305 dishes from the printed brochure live in

@@ -1,0 +1,161 @@
+# LAKHI TENT HOUSE & CATERS — cinematic scroll prototype
+
+The whole page is **one continuous shot**: sixteen beats — ten scenes and six
+filmed transitions — share a single pinned viewport and hand off through
+overlapping scroll windows, so nothing ever hard-cuts between sections. All
+sixteen clips are generated and wired in; scroll drives every frame.
+
+```bash
+npm run dev     # http://localhost:3000
+npm run build
+```
+
+Stack: Next.js 15 (App Router) · React 19 · TypeScript · Tailwind v4 · GSAP +
+ScrollTrigger · Lenis. Nothing else.
+
+---
+
+## Swapping a clip
+
+Overwrite the file in `public/videos/` (names in
+[`src/lib/scenes.ts`](src/lib/scenes.ts)) and reload — no code change. Also drop
+a smaller copy in `public/videos/mobile/`, which is what phones load:
+
+```bash
+ffmpeg -i new.mp4 -vf scale=640:-2 -c:v libx264 -crf 27 -g 12 -keyint_min 12 \
+       -sc_threshold 0 -pix_fmt yuv420p -movflags +faststart -an \
+       public/videos/mobile/<name>.mp4
+```
+
+A missing file stays a supported state, not an error: that scene falls back to a
+procedural canvas set drawn from the same scroll progress the video would have
+used, and the rest of the film is unaffected.
+
+**Encode for scrubbing.** Seeking is only as precise as the keyframe interval:
+
+```bash
+ffmpeg -i in.mp4 -c:v libx264 -crf 22 -g 12 -keyint_min 12 \
+       -sc_threshold 0 -movflags +faststart -an out.mp4
+```
+
+`-g 12` puts a keyframe roughly every half second at 24fps, which is what makes
+`currentTime` land instantly instead of decoding a long GOP. Strip audio — the
+film never plays sound.
+
+---
+
+## Retiming the film
+
+Everything lives in `src/lib/scenes.ts`. Each scene declares its scroll length
+in viewport heights, its video, its room palette, and its camera intent
+(`push` / `pull` / `travel` / `orbit`). Change `scrollVh` and that beat gets
+longer or shorter; every downstream scene, the chapter rail and the
+environment cross-fade follow automatically.
+
+`SCENE_OVERLAP_VH` controls how far neighbouring scenes bleed into each other.
+Raise it for softer hand-offs, lower it for sharper ones.
+
+### Matching scroll length to clip duration
+
+`scrollVh` decides how much scrolling it takes to play one second of footage.
+Get this wrong and a scene either races past or feels stuck, even though nothing
+is broken.
+
+```
+scrollVh ≈ clip duration in seconds × 22
+```
+
+So a 10s clip wants ~220vh and a 5s clip wants ~110vh. Keeping that ratio
+roughly constant across scenes is what makes the whole film feel like one
+consistent playback speed rather than ten scenes at ten different rates.
+
+Current lengths were set for pacing before the clips existed. If you generate
+to the durations in `docs/video-prompts.md`, the three 5-second scenes —
+`breakfast`, `starters` and `desserts`, all currently 160vh — will scrub about
+50% slower than the rest. Drop them to ~110vh to even it out.
+
+The clip is scrubbed across the middle ~78% of the scene's window; the margins
+are the arrival and departure transitions, which is why the first and last
+frames of each clip sit on screen for a moment.
+
+---
+
+## How it is put together
+
+```
+src/
+  lib/scenes.ts                 the film — single source of truth
+  components/
+    Film.tsx                    tall wrapper + one sticky stage + env cross-fade
+    Coda.tsx                    the quiet page after the film
+    animations/
+      SmoothScroll.tsx          Lenis on the GSAP ticker (one shared clock)
+      ScrollVideo.tsx           scroll → video.currentTime, with fallback
+      ScenePlaceholder.tsx      procedural set drawn when a clip is missing
+      CinematicSection.tsx      one beat: window, transitions, camera, scrub
+      SceneTransition.tsx       how each camera type enters and leaves
+      TextReveal.tsx            masked character/word reveal
+      ParallaxObject.tsx  ImageReveal.tsx  HorizontalScrollSection.tsx
+      PointerAtmosphere.tsx     subtle cursor-following key light
+    scenes/                     one thin component per beat
+    ui/                         Nav, Cursor, Loader, SceneCaption, ProgressRail
+```
+
+### Three decisions worth knowing
+
+**One pin, not ten.** The stage is pinned once for the entire journey with a
+single `sticky` element rather than a ScrollTrigger pin per section. Per-section
+pinning creates a handover between pin-spacers at every boundary — the usual
+source of scroll-jumping, and the exact seam this design is trying to avoid.
+
+**Scenes overlap.** Each scene's scroll window is widened by
+`SCENE_OVERLAP_VH` at both ends, so one beat is still leaving while the next is
+already arriving. The cut always happens inside a movement.
+
+**Seek queue in `ScrollVideo`.** Assigning `currentTime` while a previous seek
+is still resolving makes browsers drop requests and stutter. The component keeps
+only the latest target and re-issues it on `seeked`. Sources are attached only
+when a scene is near the viewport and detached when it leaves, so ten clips
+never decode at once.
+
+---
+
+## Verified
+
+Checked in headless Chrome against the running dev server, with
+`prefers-reduced-motion` explicitly disabled (headless defaults to `reduce`,
+which silently exercises the fallback path instead of the real one):
+
+- all sixteen beats compose at their scroll positions; the stage stays pinned at
+  `top: 0` throughout
+- scroll drives `video.currentTime` linearly (1.82s → 8.35s across a 10s clip)
+  and the element stays `paused` — nothing autoplays
+- reverse scrubbing runs the clip backwards (8.35s → 2.69s)
+- every filmed transition shows three layers mid-hand-off: the scene leaving,
+  the transition, and the scene arriving
+- the room colour lands on the right value at each beat, including the one
+  light room and the cold wok kitchen
+- **1–3 videos decoded at a time out of 16** — lazy activation holding
+- mobile (390×844) pins correctly and loads `/videos/mobile/*`
+- zero page errors, zero console errors, zero failed requests
+- ScrollTrigger instances, canvases and video elements constant across resize
+  and refresh — no leaks
+
+### Two bugs worth remembering
+
+**Seeking is pumped on rAF, not the `seeked` event.** An event-driven queue with
+a "busy" flag wedged permanently whenever `seeked` failed to arrive — which
+happens if a seek is issued mid-decode or at a low readyState. It showed up as a
+clip frozen on one frame while scrolling back up. Reading `video.seeking` every
+frame instead means a dropped event costs one frame, not the scene.
+
+**Site-side camera is deliberately tiny.** The generated clips contain their own
+camera movement. The original ±7% scale moves compounded with the footage and
+read as drift, so scenes now move 2–3% and filmed transitions use `camera:
+"hold"` and don't move at all.
+
+## Not built yet
+
+Deliberately out of scope for an animation-first prototype: the nine-category
+menu, quote form, SEO, analytics, CMS. The brochure content is ready to drop
+into `Coda.tsx` when that phase starts.

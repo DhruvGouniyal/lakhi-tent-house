@@ -28,8 +28,6 @@ interface Props {
   filmRef: RefObject<HTMLElement | null>;
   /** Scene-specific overlay content (titles, CTA). Receives no props. */
   children?: ReactNode;
-  /** Called with this scene's smoothed progress — used by the caption layer. */
-  onProgress?: (p: number) => void;
 }
 
 /**
@@ -44,7 +42,7 @@ interface Props {
  * The stage itself is pinned once by the parent (a single sticky viewport), so
  * there are no per-section pin-spacers to jump between.
  */
-export default function CinematicSection({ scene, filmRef, children, onProgress }: Props) {
+export default function CinematicSection({ scene, filmRef, children }: Props) {
   const layerRef = useRef<HTMLDivElement | null>(null);
   const cameraRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<ScrollVideoHandle | null>(null);
@@ -146,21 +144,24 @@ export default function CinematicSection({ scene, filmRef, children, onProgress 
       tl.eventCallback("onUpdate", () => {
         const p = tl.progress();
         videoRef.current?.seek(range(p, videoWindowStart, 0.9));
-        onProgress?.(p);
       });
     }, layer);
 
     return () => ctx.revert(); // kills triggers, tweens and inline styles
-  }, [scene, filmRef, reduced, onProgress]);
+  }, [scene, filmRef, reduced]);
 
+  // Note: no permanent `will-change` on the layers below. Promoting sixteen
+  // full-viewport elements — each wrapping a video — pinned a large amount of
+  // GPU memory for layers that are invisible almost all the time. GSAP promotes
+  // what it is actually animating, which is the only moment it helps.
   return (
     <div
       ref={layerRef}
       className="absolute inset-0"
-      style={{ zIndex: scene.index + 1, willChange: "transform, opacity, filter" }}
+      style={{ zIndex: scene.index + 1 }}
       data-scene={scene.id}
     >
-      <div ref={cameraRef} className="absolute inset-0" style={{ willChange: "transform" }}>
+      <div ref={cameraRef} className="absolute inset-0">
         <ScrollVideo
           ref={videoRef}
           src={isNarrow ? mobileSrc(scene.video) : scene.video}

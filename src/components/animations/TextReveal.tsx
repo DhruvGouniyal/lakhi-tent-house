@@ -55,6 +55,12 @@ export default function TextReveal({
     const parts = el.querySelectorAll<HTMLElement>("[data-part]");
     if (!parts.length) return;
 
+    // GSAP promotes what it animates, but a caption is static once revealed.
+    // Leaving ~200 character spans promoted kept that many composited layers
+    // alive and showed up as a large style-recalc cost on every scroll frame,
+    // so the hint is released as soon as each tween settles.
+    const release = () => gsap.set(parts, { willChange: "auto" });
+
     const tween = show
       ? gsap.to(parts, {
           yPercent: 0,
@@ -64,6 +70,7 @@ export default function TextReveal({
           stagger,
           delay,
           overwrite: "auto",
+          onComplete: release,
         })
       : gsap.to(parts, {
           yPercent: 108,
@@ -72,6 +79,7 @@ export default function TextReveal({
           ease: "power2.in",
           stagger: stagger * 0.4,
           overwrite: "auto",
+          onComplete: release,
         });
 
     return () => {

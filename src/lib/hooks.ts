@@ -16,9 +16,6 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-/** Coarse pointer OR narrow viewport — both mean "don't run the heavy path". */
-export const useIsMobile = () => useMediaQuery("(max-width: 900px), (pointer: coarse)");
-
 /**
  * Viewport width only. Used to pick the small video re-encode: a touchscreen
  * laptop reports a coarse pointer but still has a large display, and serving it

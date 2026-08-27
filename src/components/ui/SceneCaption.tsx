@@ -21,8 +21,6 @@ interface Props {
    */
   fromFraction?: number;
   toFraction?: number;
-  /** Suppress the big title (the hero and finale draw their own). */
-  hideTitle?: boolean;
 }
 
 const POSITION: Record<Placement, string> = {
@@ -61,7 +59,6 @@ export default function SceneCaption({
   placement = "bottom-left",
   fromFraction = 0.24,
   toFraction = 0.76,
-  hideTitle = false,
 }: Props) {
   const [show, setShow] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -124,16 +121,14 @@ export default function SceneCaption({
           stagger={0.03}
         />
 
-        {!hideTitle && (
-          <TextReveal
-            as="h2"
-            text={scene.title}
-            show={show}
-            className="font-display text-[clamp(2.6rem,8vw,7rem)] leading-[0.92]"
-            stagger={0.022}
-            delay={0.06}
-          />
-        )}
+        <TextReveal
+          as="h2"
+          text={scene.title}
+          show={show}
+          className="font-display text-[clamp(2.6rem,8vw,7rem)] leading-[0.92]"
+          stagger={0.022}
+          delay={0.06}
+        />
 
         <TextReveal
           text={scene.subtitle}

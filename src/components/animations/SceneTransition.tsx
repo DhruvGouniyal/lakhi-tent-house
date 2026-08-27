@@ -8,7 +8,14 @@ import type { SceneConfig } from "@/lib/scenes";
  * These are deliberately *physical* moves — the camera dollies, the table
  * surface wipes the next course in, the room turns — rather than fades. The
  * exit of one scene and the entrance of the next overlap on the timeline
- * (see SCENE_OVERLAP_VH), so the cut is always hidden inside a movement.
+ * (see the overlap constants in scenes.ts), so the cut is always hidden inside
+ * a movement.
+ *
+ * NO BLUR. An earlier version animated `filter: blur()` on these layers, which
+ * looked good and cost far too much: each layer is a full-viewport element
+ * containing a decoding video, two or three overlap during a hand-off, and
+ * blurring them dropped scrolling to ~24fps with 500ms+ frames. Depth now comes
+ * from scale and brightness, which composite on the GPU for free.
  */
 export interface TransformState {
   scale: number;
@@ -26,7 +33,7 @@ const FULL: TransformState = {
   x: "0%",
   rotate: 0,
   opacity: 1,
-  filter: "blur(0px) brightness(1)",
+  filter: "brightness(1)",
   clipPath: "inset(0% 0% 0% 0%)",
 };
 
@@ -34,92 +41,48 @@ export const restingState = (): TransformState => ({ ...FULL });
 
 /** State the scene animates *from* as it enters. */
 export function enterState(scene: SceneConfig): TransformState {
-  // A filmed transition is already doing the work — pushing or blurring it as
-  // well would fight the footage. It just crossfades in.
+  // A filmed transition is already doing the work — moving it as well would
+  // fight the footage. It just crossfades in.
   if (scene.kind === "transition") {
-    return { ...FULL, opacity: 0, filter: "blur(4px) brightness(0.8)" };
+    return { ...FULL, opacity: 0, filter: "brightness(0.85)" };
   }
 
   switch (scene.camera) {
     case "hold":
-      return { ...FULL, opacity: 0, filter: "blur(6px) brightness(0.75)" };
+      return { ...FULL, opacity: 0, filter: "brightness(0.8)" };
     case "push":
-      // Camera is still far back and out of focus, then settles onto the subject.
-      return {
-        ...FULL,
-        scale: 1.28,
-        opacity: 0,
-        filter: "blur(16px) brightness(0.55)",
-      };
+      // Camera is still far back, then settles onto the subject.
+      return { ...FULL, scale: 1.18, opacity: 0, filter: "brightness(0.6)" };
     case "pull":
       // We start tight on the previous subject and retreat to find this one.
-      return {
-        ...FULL,
-        scale: 0.78,
-        opacity: 0,
-        filter: "blur(12px) brightness(0.6)",
-      };
+      return { ...FULL, scale: 0.86, opacity: 0, filter: "brightness(0.65)" };
     case "travel":
       // The room slides past — used where the camera walks the counter line.
-      return {
-        ...FULL,
-        x: "14%",
-        scale: 1.1,
-        opacity: 0,
-        filter: "blur(10px) brightness(0.7)",
-      };
+      return { ...FULL, x: "10%", scale: 1.08, opacity: 0, filter: "brightness(0.7)" };
     case "orbit":
       // Arc in around the platter.
-      return {
-        ...FULL,
-        scale: 1.16,
-        rotate: 2.4,
-        opacity: 0,
-        filter: "blur(12px) brightness(0.65)",
-      };
+      return { ...FULL, scale: 1.12, rotate: 1.8, opacity: 0, filter: "brightness(0.7)" };
   }
 }
 
 /** State the scene animates *to* as the next one takes over. */
 export function exitState(scene: SceneConfig): TransformState {
   if (scene.kind === "transition") {
-    return { ...FULL, opacity: 0, filter: "blur(4px) brightness(0.7)" };
+    return { ...FULL, opacity: 0, filter: "brightness(0.75)" };
   }
 
   switch (scene.camera) {
     case "hold":
-      return { ...FULL, opacity: 0, filter: "blur(8px) brightness(0.5)" };
+      return { ...FULL, opacity: 0, filter: "brightness(0.55)" };
     case "push":
-      // Keep pushing past the subject — it slides out of focus toward us.
-      return {
-        ...FULL,
-        scale: 1.35,
-        opacity: 0,
-        filter: "blur(18px) brightness(0.4)",
-      };
+      // Keep pushing past the subject — it slides out toward us.
+      return { ...FULL, scale: 1.24, opacity: 0, filter: "brightness(0.45)" };
     case "pull":
-      return {
-        ...FULL,
-        scale: 0.72,
-        opacity: 0,
-        filter: "blur(14px) brightness(0.35)",
-      };
+      return { ...FULL, scale: 0.8, opacity: 0, filter: "brightness(0.45)" };
     case "travel":
-      return {
-        ...FULL,
-        x: "-14%",
-        scale: 1.08,
-        opacity: 0,
-        filter: "blur(12px) brightness(0.4)",
-      };
+      return { ...FULL, x: "-10%", scale: 1.06, opacity: 0, filter: "brightness(0.45)" };
     case "orbit":
-      return {
-        ...FULL,
-        scale: 0.86,
-        rotate: -2.4,
-        opacity: 0,
-        filter: "blur(14px) brightness(0.4)",
-      };
+      return { ...FULL, scale: 0.9, rotate: -1.8, opacity: 0, filter: "brightness(0.45)" };
   }
 }
 

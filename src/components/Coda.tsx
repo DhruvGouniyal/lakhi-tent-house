@@ -1,46 +1,54 @@
 "use client";
 
-import HorizontalScrollSection from "./animations/HorizontalScrollSection";
 import ImageReveal from "./animations/ImageReveal";
 import { CHAPTERS } from "@/lib/scenes";
 
 /**
  * After the film.
  *
- * The brief is animation-first, so this is intentionally spare: it exists to
- * give the nav real destinations and to let the journey land, not to carry
- * menu copy. The full nine-category menu belongs here later.
+ * Intentionally spare: the brief is animation-first, so this exists to let the
+ * journey land and to give the nav real destinations, not to carry menu copy.
+ *
+ * The course list used to be a pinned horizontal scroller. It looked broken in
+ * practice — the cards sat jammed under the fixed nav with most of a viewport
+ * of empty black beneath them, and it cost a second ScrollTrigger pin plus
+ * ~2400px of scrolling for content the film has already shown. A plain grid
+ * says the same thing, always renders, and pins nothing.
  */
 export default function Coda() {
+  const courses = CHAPTERS.filter((s) => s.id !== "hero" && s.id !== "finale");
+
   return (
     <div className="relative z-10" style={{ background: "var(--ink)", color: "var(--ivory)" }}>
-      {/* ---- the courses, travelled laterally ---- */}
-      <section id="menu" className="relative">
-        <div className="px-6 pb-14 pt-28 md:px-14 md:pt-36">
-          <span className="label opacity-45">The nine courses</span>
-        </div>
+      {/* ---- the courses ---- */}
+      <section id="menu" className="px-6 pb-24 pt-32 md:px-14 md:pt-40">
+        <span className="label opacity-45">The nine courses</span>
 
-        <HorizontalScrollSection className="pb-24">
-          {CHAPTERS.filter((s) => s.id !== "hero" && s.id !== "finale").map((scene) => (
-            <article
+        <ul className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {courses.map((scene) => (
+            <li
               key={scene.id}
-              className="w-[78vw] shrink-0 border-l px-8 md:w-[38vw] md:px-12"
-              style={{ borderColor: "color-mix(in srgb, var(--sand) 18%, transparent)" }}
+              className="border-t pt-6"
+              style={{ borderColor: "color-mix(in srgb, var(--sand) 16%, transparent)" }}
             >
-              <span className="label opacity-40">{scene.chapter}</span>
-              <h3 className="font-display mt-6 text-[clamp(2rem,4.4vw,3.4rem)] leading-[0.95]">
+              <span className="label text-[0.58rem] opacity-40">{scene.chapter}</span>
+              <h3 className="font-display mt-4 text-[clamp(1.6rem,2.6vw,2.4rem)] leading-[1.02]">
                 {scene.title.replace("\n", " ")}
               </h3>
-              <p className="mt-5 max-w-sm text-sm font-light leading-relaxed opacity-55">
+              <p className="mt-3 text-sm font-light leading-relaxed opacity-55">
                 {scene.subtitle}
               </p>
-            </article>
+            </li>
           ))}
-        </HorizontalScrollSection>
+        </ul>
       </section>
 
       {/* ---- about ---- */}
-      <section id="about" className="px-6 py-28 md:px-14 md:py-40">
+      <section
+        id="about"
+        className="border-t px-6 py-28 md:px-14 md:py-40"
+        style={{ borderColor: "color-mix(in srgb, var(--sand) 14%, transparent)" }}
+      >
         <ImageReveal from="bottom" className="max-w-4xl">
           <p className="font-display text-[clamp(1.7rem,4.2vw,3.2rem)] leading-[1.18]">
             Weddings, marriages, functions and events — cooked fresh, served

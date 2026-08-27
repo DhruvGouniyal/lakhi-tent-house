@@ -82,7 +82,7 @@ export default function CinematicSection({ scene, filmRef, children }: Props) {
           trigger: film,
           start: () => `top+=${startPx()} top`,
           end: () => `top+=${endPx()} top`,
-          scrub: reduced ? true : 0.55,
+          scrub: reduced ? true : 0.72,
           invalidateOnRefresh: true,
           onToggle: (self) => setActive(self.isActive),
         },
@@ -101,8 +101,8 @@ export default function CinematicSection({ scene, filmRef, children }: Props) {
             ...rest,
             autoAlpha: 1,
             clipPath: wipe ? WIPE_TO : rest.clipPath,
-            duration: 0.18,
-            ease: "power2.out",
+            duration: 0.26,
+            ease: "power1.inOut",
           },
           0
         );
@@ -126,24 +126,24 @@ export default function CinematicSection({ scene, filmRef, children }: Props) {
       tl.fromTo(
         camera,
         { scale: scene.camera === "pull" ? 1.025 : 1, x: "0%" },
-        { ...drift, duration: 0.82, ease: "none" },
-        isFirst ? 0 : 0.18
+        { ...drift, duration: 1, ease: "none" },
+        0
       );
 
       // --- leave ---------------------------------------------------------
       if (scene.nextScene) {
         tl.to(
           layer,
-          { ...exit, autoAlpha: 0, duration: 0.18, ease: "power2.in" },
-          0.82
+          { ...exit, autoAlpha: 0, duration: 0.26, ease: "power1.inOut" },
+          0.74
         );
       }
 
       // Video scrub + caption progress ride the smoothed timeline value.
-      const videoWindowStart = isFirst ? 0 : 0.12;
+      const videoWindowStart = isFirst ? 0 : 0.14;
       tl.eventCallback("onUpdate", () => {
         const p = tl.progress();
-        videoRef.current?.seek(range(p, videoWindowStart, 0.9));
+        videoRef.current?.seek(range(p, videoWindowStart, 0.92));
       });
     }, layer);
 

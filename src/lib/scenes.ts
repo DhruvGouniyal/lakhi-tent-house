@@ -201,8 +201,8 @@ export const SCENES: SceneConfig[] = raw.map((s, index) => ({ ...s, index }));
  * inside a movement. Filmed transitions use a tighter overlap — they are
  * already doing the blending themselves.
  */
-export const SCENE_OVERLAP_VH = 40;
-export const TRANSITION_OVERLAP_VH = 18;
+export const SCENE_OVERLAP_VH = 58;
+export const TRANSITION_OVERLAP_VH = 28;
 
 export const overlapFor = (scene: SceneConfig) =>
   scene.kind === "transition" ? TRANSITION_OVERLAP_VH : SCENE_OVERLAP_VH;

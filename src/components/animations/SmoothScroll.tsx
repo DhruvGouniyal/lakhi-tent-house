@@ -42,7 +42,7 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const lenis = new Lenis({
-      lerp: reduced ? 1 : 0.085,
+      lerp: reduced ? 1 : 0.075,
       wheelMultiplier: 0.9,
       touchMultiplier: 1.4,
       smoothWheel: !reduced,

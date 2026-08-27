@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSmoothScroll } from "../animations/SmoothScroll";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const LINKS = [
   { label: "Journey", href: "#journey" },
@@ -17,7 +21,27 @@ const LINKS = [
  */
 export default function Nav() {
   const [open, setOpen] = useState(false);
+  const [onContent, setOnContent] = useState(false);
   const { scrollTo, setLocked } = useSmoothScroll();
+
+  /**
+   * Over the film the nav floats on cinematic footage and needs no backdrop.
+   * Over the menu it was overlapping dish names, so past the film it picks up
+   * a translucent bar. Tracked with a trigger rather than a scroll listener so
+   * it stays correct when the film's height changes.
+   */
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: "#journey",
+        start: "bottom 72px",
+        onEnter: () => setOnContent(true),
+        onLeaveBack: () => setOnContent(false),
+        invalidateOnRefresh: true,
+      });
+    });
+    return () => ctx.revert();
+  }, []);
 
   // Lock the film while the mobile menu is open.
   useEffect(() => {
@@ -38,7 +62,15 @@ export default function Nav() {
         // The film writes --env-text per scene and it already inverts to ink on
         // the light breakfast room, so the nav stays legible without a blend
         // mode (difference washed it out against the cream background).
-        style={{ color: "var(--env-text)" }}
+        style={{
+          color: onContent ? "var(--ivory)" : "var(--env-text)",
+          background: onContent ? "color-mix(in srgb, var(--ink) 82%, transparent)" : "transparent",
+          backdropFilter: onContent ? "blur(10px)" : "none",
+          borderBottom: onContent
+            ? "1px solid color-mix(in srgb, var(--sand) 12%, transparent)"
+            : "1px solid transparent",
+          transition: "background 400ms ease, border-color 400ms ease, color 400ms ease",
+        }}
       >
         <button
           onClick={() => go("#journey")}

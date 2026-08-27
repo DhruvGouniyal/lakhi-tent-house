@@ -52,8 +52,9 @@ in viewport heights, its video, its room palette, and its camera intent
 longer or shorter; every downstream scene, the chapter rail and the
 environment cross-fade follow automatically.
 
-`SCENE_OVERLAP_VH` controls how far neighbouring scenes bleed into each other.
-Raise it for softer hand-offs, lower it for sharper ones.
+`SCENE_OVERLAP_VH` (58) and `TRANSITION_OVERLAP_VH` (28) control how far
+neighbouring beats bleed into each other. Raise for softer hand-offs, lower for
+sharper ones.
 
 ### Matching scroll length to clip duration
 
@@ -62,21 +63,18 @@ Get this wrong and a scene either races past or feels stuck, even though nothing
 is broken.
 
 ```
-scrollVh ≈ clip duration in seconds × 22
+scenes      scrollVh ≈ clip seconds × 17
+transitions scrollVh ≈ clip seconds × 12   (connective tissue passes quicker)
 ```
 
-So a 10s clip wants ~220vh and a 5s clip wants ~110vh. Keeping that ratio
-roughly constant across scenes is what makes the whole film feel like one
-consistent playback speed rather than ten scenes at ten different rates.
+Current lengths follow that: 10s scenes at 170vh, 6s scenes at 100vh, 6s
+transitions at 75vh. Each entry records its `clipSeconds` so the derivation
+stays visible. Keeping the ratio roughly constant is what makes the film feel
+like one playback speed rather than sixteen different ones.
 
-Current lengths were set for pacing before the clips existed. If you generate
-to the durations in `docs/video-prompts.md`, the three 5-second scenes —
-`breakfast`, `starters` and `desserts`, all currently 160vh — will scrub about
-50% slower than the rest. Drop them to ~110vh to even it out.
-
-The clip is scrubbed across the middle ~78% of the scene's window; the margins
-are the arrival and departure transitions, which is why the first and last
-frames of each clip sit on screen for a moment.
+The clip is scrubbed across the middle ~78% of a beat's window; the margins are
+the arrival and departure, which is why the first and last frames of each clip
+sit on screen for a moment.
 
 ---
 
@@ -95,9 +93,13 @@ src/
       CinematicSection.tsx      one beat: window, transitions, camera, scrub
       SceneTransition.tsx       how each camera type enters and leaves
       TextReveal.tsx            masked character/word reveal
-      ParallaxObject.tsx  ImageReveal.tsx  HorizontalScrollSection.tsx
+      ImageReveal.tsx           clip-path reveal
       PointerAtmosphere.tsx     subtle cursor-following key light
-    scenes/                     one thin component per beat
+    scenes/                     HeroScene, LiveCounterScene, FinalScene are
+                                bespoke; StoryScene covers every other beat
+                                including all six filmed transitions
+    lib/menu.ts                 the printed menu, as data
+    components/Menu.tsx         renders it
     ui/                         Nav, Cursor, Loader, SceneCaption, ProgressRail
 ```
 
@@ -112,11 +114,9 @@ source of scroll-jumping, and the exact seam this design is trying to avoid.
 `SCENE_OVERLAP_VH` at both ends, so one beat is still leaving while the next is
 already arriving. The cut always happens inside a movement.
 
-**Seek queue in `ScrollVideo`.** Assigning `currentTime` while a previous seek
-is still resolving makes browsers drop requests and stutter. The component keeps
-only the latest target and re-issues it on `seeked`. Sources are attached only
-when a scene is near the viewport and detached when it leaves, so ten clips
-never decode at once.
+**One video at a time.** The `<video>` element is mounted only while its scene
+is in range, so one media pipeline is alive instead of sixteen. Seeks are pumped
+on rAF and snapped to the clips' 24fps grid — see the notes below.
 
 ---
 
@@ -154,8 +154,20 @@ camera movement. The original ±7% scale moves compounded with the footage and
 read as drift, so scenes now move 2–3% and filmed transitions use `camera:
 "hold"` and don't move at all.
 
+## The menu
+
+All nine categories and 305 dishes from the printed brochure live in
+[`src/lib/menu.ts`](src/lib/menu.ts) as plain data, rendered by
+`Menu.tsx` below the film. Everything is visible by default rather than
+collapsed behind accordions — it is the content customers came for, and hiding
+it would also keep it out of search results. Long groups use width-based CSS
+columns, so a second column appears only where one genuinely fits.
+
+Contact details come from the brochure cover (the only page carrying the phone
+number) and live alongside the menu data in `BUSINESS`.
+
 ## Not built yet
 
-Deliberately out of scope for an animation-first prototype: the nine-category
-menu, quote form, SEO, analytics, CMS. The brochure content is ready to drop
-into `Coda.tsx` when that phase starts.
+Out of scope so far: a real quote form, SEO metadata beyond the basics,
+analytics, CMS. Page 11 of the brochure is an order-confirmation form that
+would map naturally onto a quote request.
